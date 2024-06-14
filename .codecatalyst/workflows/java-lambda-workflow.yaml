@@ -1,0 +1,49 @@
+Name: java-lambda-workflow
+SchemaVersion: 1.0
+
+Connections:
+- Name: my-aws-account
+
+Role: codecatalyst-build-role
+
+Triggers:
+- Type: PUSH
+  Branches:
+  - main
+
+Actions:
+  BuildLambda:
+    Identifier: aws/build-gamma@v1
+    Environment:
+      Name: my-production-environment
+    Inputs:
+      Sources:
+      - WorkflowSource
+    Configuration:
+      Steps:
+      - Run: mvn clean package
+    Outputs:
+      Artifacts:
+      - Name: lambda_artifact
+        Files:
+        - "target/*.jar"
+
+  DeployLambda:
+    Identifier: aws/lambda-deploy@v2
+    DependsOn:
+    - BuildLambda
+    Environment:
+      Name: my-production-environment
+    Role: codecatalyst-deploy-role
+    Inputs:
+      Artifacts:
+      - lambda_artifact
+    Configuration:
+      FunctionName: my-java-lambda-function
+      Runtime: java11
+      Handler: com.example.lambda.Handler::handleRequest
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: my-s3-bucket
