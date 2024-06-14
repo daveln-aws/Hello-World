@@ -1,0 +1,40 @@
+Name: cdk-s3-deployment
+SchemaVersion: 1.0
+
+Triggers:
+  - Type: PUSH
+    Branches:
+      - main
+
+Environments:
+  cdk-s3-deployment-environment:
+    Connections:
+      - Name: cdk-s3-deployment-account-connection
+        Role: cdk-s3-deployment-bootstrap-role
+
+Actions:
+  CDKBootstrap-gamma:
+    Identifier: aws/cdk-bootstrap-gamma@v1
+    Inputs:
+      Sources:
+        - WorkflowSource
+    Environment:
+      Name: cdk-s3-deployment-environment
+    Configuration:
+      Region: us-west-2
+
+  CDKDeploy-gamma:
+    Identifier: aws/cdk-deploy-gamma@v1
+    DependsOn:
+      - CDKBootstrap-gamma
+    Inputs:
+      Sources:
+        - WorkflowSource
+    Environment:
+      Name: cdk-s3-deployment-environment
+      Connections:
+        - Name: cdk-s3-deployment-account-connection
+          Role: cdk-s3-deployment-role
+    Configuration:
+      StackName: cdk-s3-stack
+      Region: us-west-2
